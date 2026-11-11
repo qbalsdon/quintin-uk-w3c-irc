@@ -1,0 +1,28 @@
+{
+  "name": "quintin-uk-w3c-irc",
+  "version": "1.0.0",
+  "description": "Web IRC client for W3C meetings (irc.w3.org) with one-click Zakim and RRSAgent actions",
+  "author": "qbalsdon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qbalsdon/quintin-uk-w3c-irc.git"
+  },
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "irc-framework": "^4.14.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "1.65.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

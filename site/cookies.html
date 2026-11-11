@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cookies and privacy — W3C IRC</title>
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+  <main class="page">
+    <a class="back" href="./">← Back to W3C IRC</a>
+    <h1>Cookies and privacy</h1>
+    <p class="lead">This site uses two cookies, and only so that it works. There is <strong>no telemetry</strong>: no analytics, no tracking, no advertising, and no third-party scripts, fonts or images. The only other service it talks to is the IRC server, <strong>irc.w3.org</strong>.</p>
+
+    <h2>Cookies</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Name</th><th scope="col">What it's for</th><th scope="col">What's in it</th><th scope="col">How long it lasts</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>w3circ_sid</code></td>
+            <td>Links this browser to its IRC connection on the server, so the page can show and send your messages.</td>
+            <td>A random identifier. It can't be read by the page's scripts.</td>
+            <td>Until you close the browser or disconnect.</td>
+          </tr>
+          <tr>
+            <td><code>w3circ_prefs</code></td>
+            <td>Remembers your details so you can connect again without retyping them.</td>
+            <td>The nickname, full name and saved channels you entered.</td>
+            <td>One year from when you last changed them.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Browser storage</h2>
+    <p>The page also keeps a few display choices in your browser's local storage: whether the user list and the Admin panel are open, and which channel you last looked at. They never leave your browser.</p>
+
+    <h2>What the server keeps</h2>
+    <ul>
+      <li>While you're connected, the server holds the recent messages from your channels and private conversations in memory (up to 2,000 lines each), so they're still there when you reload the page.</li>
+      <li>Nothing is written to disk. It's deleted when you disconnect, when no page has been open for 10 minutes, or when the server restarts.</li>
+      <li>This app doesn't record IP addresses or what you do. The hosting provider's web server keeps standard access logs (IP address, time and page requested), as every website's host does.</li>
+      <li>At most 10 people can be connected at a time.</li>
+    </ul>
+
+    <h2>IRC is public</h2>
+    <p>Messages you send in a channel are seen by everyone in that channel. In W3C meetings, RRSAgent records the channel and the minutes are usually published.</p>
+
+    <h2>Forget me</h2>
+    <p>Disconnect and remove both cookies and the browser storage from this browser.</p>
+    <div class="row">
+      <button class="btn danger" type="button" id="forget">Forget me</button>
+      <p id="forget-status" role="status" class="muted"></p>
+    </div>
+  </main>
+  <script src="cookies.js"></script>
+</body>
+</html>

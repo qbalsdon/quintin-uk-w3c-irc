@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>W3C IRC</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230b5fff' d='M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#composer-input">Skip to message input</a>
+  <div class="app">
+    <nav class="sidebar" aria-label="Channels and conversations">
+      <header class="brand">
+        <h1>W3C IRC</h1>
+        <div class="status" id="status" role="status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span><span id="status-text">Not connected</span>
+        </div>
+        <p class="conn-count" id="conn-count"></p>
+      </header>
+
+      <div id="side-channels">
+      <section aria-labelledby="saved-h">
+        <h2 id="saved-h">Channels</h2>
+        <ul id="saved-list" class="buffer-list"></ul>
+        <form id="add-channel" class="add-channel">
+          <label for="add-channel-input" class="visually-hidden">Add channel</label>
+          <input id="add-channel-input" placeholder="#channel" autocomplete="off" spellcheck="false">
+          <button type="submit" class="btn small">Add</button>
+        </form>
+      </section>
+
+      <section aria-labelledby="other-h">
+        <h2 id="other-h">Other</h2>
+        <ul id="other-list" class="buffer-list"></ul>
+      </section>
+      </div>
+
+      <div id="side-controls" class="side-controls" hidden>
+        <div class="side-chan">
+          <button id="side-back" class="btn small ghost" type="button">
+            <span aria-hidden="true">←</span> All channels <span id="side-back-badge" class="badge" hidden></span>
+          </button>
+          <div class="side-chan-row">
+            <h2 id="side-chan-name"></h2>
+            <button id="side-leave" class="btn small ghost" type="button">Leave</button>
+          </div>
+        </div>
+        <section id="quick" class="quick" aria-labelledby="quick-h">
+          <h2 id="quick-h">Quick actions</h2>
+          <p class="hint">Click to send · <kbd>Shift</kbd>+click to edit first</p>
+          <div id="quick-groups" class="quick-groups"></div>
+        </section>
+      </div>
+
+      <footer class="sidebar-foot">
+        <button id="settings-btn" class="btn ghost" type="button" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          Settings
+        </button>
+        <div class="foot-row">
+          <button id="disconnect-btn" class="btn ghost small" type="button">Disconnect</button>
+          <a class="cookie-link" href="cookies" aria-label="Cookies and privacy" title="Cookies and privacy"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5z"/><circle cx="8.5" cy="8.5" r="1"/><circle cx="15.5" cy="15.5" r="1"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="12" r="1"/></svg></a>
+        </div>
+      </footer>
+    </nav>
+
+    <main class="main">
+      <header class="chan-head">
+        <div class="chan-title">
+          <h2 id="buf-name">—</h2>
+          <p id="buf-topic" class="topic"></p>
+        </div>
+        <div class="chan-actions">
+          <button id="join-btn" class="btn small" type="button" hidden>Join</button>
+          <button id="part-btn" class="btn small ghost" type="button" hidden>Leave</button>
+          <button id="close-btn" class="btn small ghost" type="button" hidden>Close</button>
+          <button id="users-toggle" class="btn small ghost" type="button" aria-controls="userlist" aria-expanded="true">Users <span id="user-count"></span></button>
+        </div>
+      </header>
+
+      <div class="body">
+        <div id="log" class="log" role="log" aria-live="polite" aria-relevant="additions" aria-labelledby="buf-name" tabindex="0"></div>
+        <aside id="userlist" class="userlist" aria-label="Users in channel">
+          <ul id="users"></ul>
+        </aside>
+      </div>
+
+      <form id="composer" class="composer">
+        <button id="scribe-toggle" class="btn small ghost scribe-toggle" type="button" aria-pressed="false" title="Scribe mode: prefix each message with the speaker’s name">Scribe</button>
+        <span id="composer-nick" class="composer-nick" aria-hidden="true"></span>
+        <span id="scribe-speaker-wrap" class="scribe-speaker" hidden>
+          <label for="scribe-speaker" class="visually-hidden">Speaker</label>
+          <input id="scribe-speaker" list="scribe-speakers" placeholder="Speaker" autocomplete="off" spellcheck="false">
+          <span aria-hidden="true">:</span>
+          <datalist id="scribe-speakers"></datalist>
+        </span>
+        <label for="composer-input" class="visually-hidden">Message</label>
+        <textarea id="composer-input" rows="1" placeholder="Message… (/help for commands, @ or Tab completes nicks)" autocomplete="off" spellcheck="true" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-list"></textarea>
+        <ul id="mention-list" class="mention-list" role="listbox" aria-label="Matching names" hidden></ul>
+        <span id="mention-status" class="visually-hidden" role="status" aria-live="polite"></span>
+        <button type="submit" class="btn">Send</button>
+      </form>
+    </main>
+  </div>
+
+  <dialog id="settings" aria-labelledby="settings-h">
+    <form method="dialog" id="settings-form">
+      <h2 id="settings-h">Settings</h2>
+      <p class="hint">Changing these reconnects you. If the nickname is taken, a number is added to the end.</p>
+      <label>Nickname <input name="nick" required maxlength="30" autocomplete="off" spellcheck="false"></label>
+      <label>Full name <span class="opt">(optional)</span> <input name="realname" maxlength="100" autocomplete="name"></label>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="reconnect-btn">Reconnect</button>
+        <span class="spacer"></span>
+        <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
+        <button value="save" class="btn">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="connect" aria-labelledby="connect-h">
+    <form id="connect-form" novalidate>
+      <h2 id="connect-h">Connect to W3C IRC</h2>
+      <p class="hint">Connects you to <strong>irc.w3.org</strong>. Your nickname and channels are remembered in a cookie on this browser. <a href="cookies">Cookies and privacy</a></p>
+      <p class="conn-note" id="connect-count"></p>
+      <label>Nickname <input name="nick" required maxlength="30" autocomplete="off" spellcheck="false" aria-describedby="connect-nick-hint connect-error"></label>
+      <p class="field-hint" id="connect-nick-hint">Letters, digits and - _ [ ] { } | ^ `. Up to 30 characters, not starting with a digit or -.</p>
+      <label>Full name <span class="opt">(optional)</span> <input name="realname" maxlength="100" autocomplete="name"></label>
+      <label>Channels to join <span class="opt">(optional, separated by spaces)</span> <input name="channels" placeholder="#channel #another" autocomplete="off" spellcheck="false"></label>
+      <p class="form-error" id="connect-error" role="alert"></p>
+      <div class="dialog-actions">
+        <span class="spacer"></span>
+        <button type="submit" class="btn" id="connect-btn">Connect</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

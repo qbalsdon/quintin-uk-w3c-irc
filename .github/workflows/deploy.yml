@@ -1,0 +1,132 @@
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Accessibility and UI tests (Playwright + axe)
+    runs-on: ubuntu-latest
+    # Playwright's image has Chromium and its system libraries, so nothing is installed with apt.
+    # Keep the tag in step with the @playwright/test version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test and accessibility reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  deploy:
+    name: Deploy to quintin.uk/w3c-irc
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Never run two deploys at once; a newer push cancels an in-flight one.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: true
+    env:
+      # Must match the application root of the cPanel Node.js app.
+      DEPLOY_PATH: repo/quintin-uk-w3c-irc
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      # The server runs Node 20; catch syntax it can't parse here rather than as a 500 there.
+      - name: Syntax check (Node 20)
+        run: find . -path ./node_modules -prune -o -name '*.js' -print | xargs -r -n1 node --check
+
+      - name: Check deployment configuration
+        env:
+          ADMIN_CODE: ${{ secrets.ADMIN_CODE }}
+        run: |
+          missing=""
+          [ -n "${{ vars.SSH_USER }}" ]           || missing="$missing SSH_USER(variable)"
+          [ -n "$ADMIN_CODE" ]                    || missing="$missing ADMIN_CODE"
+          [ -n "${{ secrets.SSH_HOST }}" ]        || missing="$missing SSH_HOST"
+          [ -n "${{ secrets.SSH_PORT }}" ]        || missing="$missing SSH_PORT"
+          [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ] || missing="$missing SSH_PRIVATE_KEY"
+          [ -n "${{ secrets.SSH_KNOWN_HOSTS }}" ] || missing="$missing SSH_KNOWN_HOSTS"
+          if [ -n "$missing" ]; then echo "::error::Missing deployment configuration:$missing"; exit 1; fi
+          if [ "${#ADMIN_CODE}" -lt 16 ]; then echo "::error::ADMIN_CODE must be at least 16 characters"; exit 1; fi
+
+      - name: Set up SSH key and known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Sync files to server
+        run: |
+          SSH="ssh -i $HOME/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}"
+          $SSH "${{ vars.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p ~/${DEPLOY_PATH}"
+          # --delete keeps the server matching the repo; only the excluded paths survive.
+          rsync -az --delete -e "$SSH" \
+            --exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='tests/' \
+            --exclude='playwright-report/' --exclude='test-results/' --exclude='playwright.config.js' \
+            --exclude='env/' --exclude='.env' --exclude='.htaccess' --exclude='tmp/' --exclude='*.log' \
+            ./ "${{ vars.SSH_USER }}@${{ secrets.SSH_HOST }}:${DEPLOY_PATH}/"
+
+      # ADMIN_CODE is a secret (GitHub masks secrets in logs; variables are printed in plain text).
+      # Piped over stdin so it never appears in a command line.
+      - name: Install environment file
+        env:
+          ADMIN_CODE: ${{ secrets.ADMIN_CODE }}
+        run: |
+          printf 'BASE_PATH=/w3c-irc\nMAX_CONNECTIONS=10\nIDLE_MINUTES=10\nADMIN_CODE=%s\n' "$ADMIN_CODE" \
+            | ssh -i ~/.ssh/deploy_key -p "${{ secrets.SSH_PORT }}" "${{ vars.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+                "umask 077 && cat > ~/${DEPLOY_PATH}/.env"
+
+      - name: Install dependencies and restart (cPanel / Passenger)
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.SSH_PORT }}" "${{ vars.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "cd ~/${DEPLOY_PATH} && bash scripts/remote-deploy.sh"
+
+      - name: Verify
+        run: |
+          url="${{ vars.PUBLIC_URL || 'https://quintin.uk/w3c-irc' }}/api/health"
+          echo "Checking $url"
+          for attempt in 1 2 3 4 5 6; do
+            sleep 5
+            body=$(curl -fsS --max-time 20 "$url" || true)
+            echo "$body"
+            if printf '%s' "$body" | grep -q '"status":"ok"'; then
+              if ! printf '%s' "$body" | grep -q '"ircReachable":"reachable"'; then
+                echo "::warning title=IRC not reachable::The app is running, but the server can't reach the IRC server, so nobody can connect. Ask the host to allow outgoing TCP to irc.w3.org:6679."
+              fi
+              exit 0
+            fi
+            echo "Attempt $attempt did not report healthy; waiting…"
+          done
+          echo "::error::The app did not report healthy. Check the cPanel Node.js app log."
+          exit 1

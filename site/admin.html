@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Connections — W3C IRC</title>
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+  <main class="page">
+    <a class="back" href="./">← Back to W3C IRC</a>
+    <h1>Connections</h1>
+    <div class="row">
+      <p class="meter" id="meter" role="status">Loading…</p>
+      <span class="muted" id="meta"></span>
+    </div>
+    <p class="row">
+      <button class="btn danger" type="button" id="end-all">Disconnect everyone</button>
+      <span id="action-status" role="status" class="muted"></span>
+    </p>
+    <div class="table-wrap">
+      <table>
+        <caption class="muted caption">Refreshes every 3 seconds</caption>
+        <thead><tr><th scope="col">Nickname</th><th scope="col">IRC</th><th scope="col">Channels</th><th scope="col">Open tabs</th><th scope="col">Connected for</th><th scope="col">Last active</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>
