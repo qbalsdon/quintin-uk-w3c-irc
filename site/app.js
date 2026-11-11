@@ -157,6 +157,7 @@ async function startSession(prefs = readPrefs()) {
   if (r.ok) { hideConnect(); return openEvents(); }
   if (r.status === 503 && r.data?.error === 'full') { renderCount(r.data); return showConnect(`All ${r.data.max} connections are in use. Try again in a few minutes.`); }
   if (r.status === 400) return showConnect(r.data?.message || 'Check your nickname.');
+  if (r.status === 503 && r.data?.message) return showConnect(r.data.message);
   return retryLater();
 }
 function retryLater() {

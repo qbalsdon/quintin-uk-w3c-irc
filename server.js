@@ -24,9 +24,16 @@ const IDLE_MS = Number(env.IDLE_MINUTES || 10) * 60_000; // no tab open for this
 // Only this IRC server can be used. Overridable for tests only.
 const IRC = { host: env.IRC_HOST || 'irc.w3.org', port: Number(env.IRC_PORT || 6679), tls: (env.IRC_TLS ?? 'true') !== 'false' };
 const ADMIN_CODE = env.ADMIN_CODE || '';
+// Under Passenger, it would hand its socket to the FIRST server that listens. This app runs two
+// (the website and the practice IRC server), so say explicitly which one is the website.
+const passenger = globalThis.PhusionPassenger;
+if (passenger) passenger.configure({ autoInstall: false });
+
 // Practice mode: an IRC server inside this process with practice Zakim and RRSAgent. Never reaches W3C.
-const practice = await startPracticeIrc();
-const PRACTICE_IRC = { host: '127.0.0.1', port: practice.port, tls: false, label: 'practice server' };
+let PRACTICE_IRC = null;
+startPracticeIrc()
+  .then(({ port }) => { PRACTICE_IRC = { host: '127.0.0.1', port, tls: false, label: 'practice server' }; })
+  .catch((e) => console.error('Practice IRC server could not start:', e.message));
 const SID = 'w3circ_sid';
 const NOT_FOUND = fs.readFileSync(path.join(SITE, '404.html'), 'utf8').replaceAll('{{BASE}}', BASE_PATH);
 
@@ -125,7 +132,7 @@ function probeIrc() {
     sock.once('error', (e) => done(`blocked (${e.code || e.message})`));
   });
 }
-router.get('/api/health', async (req, res) => res.json({ status: 'ok', ...counts(), irc: `${IRC.host}:${IRC.port}`, ircReachable: await probeIrc() }));
+router.get('/api/health', async (req, res) => res.json({ status: 'ok', ...counts(), irc: `${IRC.host}:${IRC.port}`, ircReachable: await probeIrc(), practice: PRACTICE_IRC ? 'ready' : 'unavailable' }));
 router.get('/api/status', (req, res) => res.json(counts()));
 
 // Start (or resume) this browser's IRC connection with the preferences from its cookie.
@@ -135,6 +142,7 @@ router.post('/api/session', (req, res) => {
   const prefs = cleanPrefs(req.body || {});
   if (!prefs.nick) return res.status(400).json({ error: 'nick', message: 'Choose a nickname: letters, digits and - _ [ ] { } | ^ `, up to 30 characters, not starting with a digit or -.' });
   if (sessions.size >= MAX_CONNECTIONS) return res.status(503).json({ error: 'full', ...counts() });
+  if (prefs.practice && !PRACTICE_IRC) return res.status(503).json({ error: 'practice', message: 'Practice mode is not available right now.' });
   const s = new Session(prefs, prefs.practice ? PRACTICE_IRC : IRC, removeSession);
   sessions.set(s.id, s);
   res.set('Set-Cookie', sidCookie(req, s.id));
@@ -235,10 +243,12 @@ for (const sig of ['SIGTERM', 'SIGINT']) {
 // Resolves with the port once the server is listening (PORT=0 picks a free port).
 export const ready = new Promise((resolve, reject) => {
   server.once('error', reject);
-  server.listen(PORT, HOST, () => {
+  const onListening = () => {
     const addr = server.address();
     const port = typeof addr === 'object' && addr ? addr.port : PORT;
     console.log(`W3C IRC listening on ${HOST || '*'}:${port}${BASE_PATH} (IRC ${IRC.host}:${IRC.port}, max ${MAX_CONNECTIONS})`);
     resolve(port);
-  });
+  };
+  if (passenger) server.listen('passenger', onListening);
+  else server.listen(PORT, HOST, onListening);
 });
