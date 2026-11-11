@@ -9,6 +9,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Session, cleanPrefs } from './lib/session.js';
+import { startPracticeIrc } from './lib/practice-irc.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.join(__dirname, 'site');
@@ -23,6 +24,9 @@ const IDLE_MS = Number(env.IDLE_MINUTES || 10) * 60_000; // no tab open for this
 // Only this IRC server can be used. Overridable for tests only.
 const IRC = { host: env.IRC_HOST || 'irc.w3.org', port: Number(env.IRC_PORT || 6679), tls: (env.IRC_TLS ?? 'true') !== 'false' };
 const ADMIN_CODE = env.ADMIN_CODE || '';
+// Practice mode: an IRC server inside this process with practice Zakim and RRSAgent. Never reaches W3C.
+const practice = await startPracticeIrc();
+const PRACTICE_IRC = { host: '127.0.0.1', port: practice.port, tls: false, label: 'practice server' };
 const SID = 'w3circ_sid';
 const NOT_FOUND = fs.readFileSync(path.join(SITE, '404.html'), 'utf8').replaceAll('{{BASE}}', BASE_PATH);
 
@@ -131,7 +135,7 @@ router.post('/api/session', (req, res) => {
   const prefs = cleanPrefs(req.body || {});
   if (!prefs.nick) return res.status(400).json({ error: 'nick', message: 'Choose a nickname: letters, digits and - _ [ ] { } | ^ `, up to 30 characters, not starting with a digit or -.' });
   if (sessions.size >= MAX_CONNECTIONS) return res.status(503).json({ error: 'full', ...counts() });
-  const s = new Session(prefs, IRC, removeSession);
+  const s = new Session(prefs, prefs.practice ? PRACTICE_IRC : IRC, removeSession);
   sessions.set(s.id, s);
   res.set('Set-Cookie', sidCookie(req, s.id));
   s.connect();
@@ -184,6 +188,7 @@ router.get('/api/admin/sessions', (req, res) => {
     sessions: [...sessions.values()].map((s) => ({
       id: s.publicId,
       nick: s.currentNick,
+      practice: !!s.prefs.practice,
       ircConnected: s.connected,
       channels: s.joinedChannels(),
       tabs: s.listeners.size,

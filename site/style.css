@@ -104,6 +104,9 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--border); borde
 .cookie-link svg { width: 20px; height: 20px; }
 .conn-count { margin: 6px 0 0; font-size: 12px; color: var(--side-muted); }
 .conn-count.full { color: #ffb4b4; font-weight: 600; }
+.practice-badge { margin: 8px 0 0; padding: 4px 8px; border-radius: 6px; background: #ffd75e; color: #1b1f27; font-size: 12px; font-weight: 700; }
+dialog label.practice-check { flex-direction: row; align-items: center; gap: 8px; margin: 4px 0 4px; }
+dialog label.practice-check input { width: 18px; height: 18px; }
 
 /* ---------- buttons ---------- */
 .btn {

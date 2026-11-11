@@ -29,7 +29,7 @@ function render(data) {
   if (!data.sessions.length) {
     const tr = document.createElement('tr');
     const td = cell('Nobody is connected.', 'muted');
-    td.colSpan = 7;
+    td.colSpan = 8;
     tr.append(td);
     rows.replaceChildren(tr);
     return;
@@ -55,6 +55,7 @@ function render(data) {
     act.append(btn);
     tr.append(
       th,
+      cell(s.practice ? 'Practice' : 'W3C'),
       cell(s.ircConnected ? 'Connected' : 'Connecting…', s.ircConnected ? 'status-ok' : 'status-bad'),
       cell(s.channels.join(', ') || '—'),
       cell(String(s.tabs)),

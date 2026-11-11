@@ -17,6 +17,7 @@
           <span class="dot" aria-hidden="true"></span><span id="status-text">Not connected</span>
         </div>
         <p class="conn-count" id="conn-count"></p>
+        <p class="practice-badge" id="practice-badge" hidden>Practice mode — not connected to W3C</p>
       </header>
 
       <div id="side-channels">
@@ -128,6 +129,8 @@
       <p class="field-hint" id="connect-nick-hint">Letters, digits and - _ [ ] { } | ^ `. Up to 30 characters, not starting with a digit or -.</p>
       <label>Full name <span class="opt">(optional)</span> <input name="realname" maxlength="100" autocomplete="name"></label>
       <label>Channels to join <span class="opt">(optional, separated by spaces)</span> <input name="channels" placeholder="#channel #another" autocomplete="off" spellcheck="false"></label>
+      <label class="check practice-check"><input type="checkbox" name="practice" aria-describedby="practice-hint"> Practice mode</label>
+      <p class="field-hint" id="practice-hint">A private test server with practice Zakim and RRSAgent bots in <strong>#practice</strong>. Nothing reaches W3C. Other people in practice mode can see your messages.</p>
       <p class="form-error" id="connect-error" role="alert"></p>
       <div class="dialog-actions">
         <span class="spacer"></span>

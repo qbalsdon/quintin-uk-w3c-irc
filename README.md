@@ -10,6 +10,15 @@ A web IRC client for W3C meetings on **irc.w3.org**, with one-click Zakim and RR
 - Your nickname, full name and channels are remembered in a cookie on your browser. The cookie icon in the bottom-left corner opens [what the cookies are for](https://quintin.uk/w3c-irc/cookies). There's no telemetry.
 - A connection closes when you click **Disconnect**, or when no page has been open for 10 minutes.
 
+## Practice mode
+
+Tick **Practice mode** on the connect screen to use a small IRC server built into the app instead of irc.w3.org. You join **#practice**, where practice versions of Zakim and RRSAgent are waiting, so you can try the commands and quick actions without anyone at W3C seeing them. Nothing is recorded or published, and everything disappears when the server restarts. Other people in practice mode share the same server, so you can rehearse a meeting together.
+
+- **Practice Zakim** understands `q+`, `q+ to …`, `q-`, `q?`, `ack …`, `present+`, `regrets+`, `agenda+ …`, `next agendum`, `open agendum N`, `close agendum N`, `close the queue`, `open the queue`, and `zakim, start meeting / this is … / agenda? / list participants / nominate a scribe / help / bye`.
+- **Practice RRSAgent** understands `rrsagent, make minutes / set logs public / help / bye`.
+- In any other practice channel, invite the bots with the **Invite Zakim** and **Invite RRSAgent** quick actions.
+- A yellow "Practice mode" label in the sidebar shows you're not on W3C. To switch back, click **Disconnect** and connect without the box ticked.
+
 ## Using it
 
 - **Sidebar:** while you're not in a joined channel, the sidebar lists your channels. Once you're in a joined channel it switches to that channel's controls: **Leave**, **← All channels** (shows the list again without leaving, with a count of unread messages elsewhere) and the quick actions. Leaving the channel, or losing the connection, brings the channel list back.
@@ -83,3 +92,4 @@ Add new requests at the bottom with `- [ ]`, and tick them off when they're done
 - [x] Cookie icon with a page explaining the cookies; no telemetry.
 - [x] At most 10 connections at once, only to irc.w3.org, with the count shown at the top.
 - [x] Management page at `/w3c-irc/<ADMIN_CODE>` to see and disconnect connections.
+- [x] Practice mode: a built-in test IRC server with practice Zakim and RRSAgent, separate from W3C.

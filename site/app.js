@@ -133,7 +133,7 @@ function readPrefs() {
   try { const p = JSON.parse(decodeURIComponent(m[1])); return p && typeof p === 'object' ? p : null; } catch { return null; }
 }
 function writePrefs(p) {
-  const v = encodeURIComponent(JSON.stringify({ nick: p.nick || '', realname: p.realname || '', channels: p.channels || [] }));
+  const v = encodeURIComponent(JSON.stringify({ nick: p.nick || '', realname: p.realname || '', channels: p.channels || [], practice: p.practice === true }));
   document.cookie = `${PREFS_COOKIE}=${v}; Path=${cookiePath()}; Max-Age=31536000; SameSite=Strict${location.protocol === 'https:' ? '; Secure' : ''}`;
 }
 
@@ -204,6 +204,7 @@ function showConnect(message = '') {
   if (!f.nick.value) f.nick.value = p.nick || '';
   if (!f.realname.value) f.realname.value = p.realname || '';
   if (!f.channels.value) f.channels.value = (p.channels || []).join(' ');
+  f.practice.checked = p.practice === true;
   els.connectError.textContent = message;
   f.nick.setAttribute('aria-invalid', String(!!message && /nick/i.test(message)));
   pollCount();
@@ -223,7 +224,8 @@ els.connectForm.addEventListener('submit', async (e) => {
   const nick = f.nick.value.trim();
   if (!NICK_RE.test(nick)) return showConnect('That nickname can’t be used. Use letters, digits and - _ [ ] { } | ^ `, up to 30 characters, not starting with a digit or -.');
   const channels = f.channels.value.split(/[\s,]+/).map((c) => c.trim()).filter(Boolean).map((c) => (/^[#&]/.test(c) ? c : '#' + c));
-  const prefs = { nick, realname: f.realname.value.trim(), channels };
+  const practice = f.practice.checked;
+  const prefs = { nick, realname: f.realname.value.trim(), channels: practice && !channels.length ? ['#practice'] : channels, practice };
   writePrefs(prefs);
   els.connectBtn.disabled = true;
   try { await startSession(prefs); } finally { els.connectBtn.disabled = false; }
@@ -299,6 +301,7 @@ function setStatus(s, override) {
   els.status.classList.toggle('on', !!s.connected);
   els.statusText.textContent = override || (s.connected ? `${s.nick} @ ${s.host || state.settings?.host || ''}` : 'Connecting…');
   els.composerNick.textContent = s.nick || '';
+  if (typeof s.practice === 'boolean') { $('practice-badge').hidden = !s.practice; document.body.classList.toggle('practice', s.practice); }
   renderQuickState();
 }
 
